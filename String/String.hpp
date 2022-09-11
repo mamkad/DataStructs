@@ -58,9 +58,12 @@ namespace DataStructs
 
 	public:
 		size_t count(function<bool(char)> const&); // кол-во символов в строке, удов определённому условию
-		int pos(char);				   // позиция символа
-		String del(set<char> const&);		   // удалить все символы, указанные в аргументе
+		int pos(char);				   			   // позиция символа (поиск с начала)
+		int rpos(char);				   			   // позиция символа (поиск с конца)
+		
+		String del(set<char> const&);		   	   // удалить все символы, указанные в аргументе
+		String trim();							   // удалить все пробелы
 
-		String trim();				   // удалить все пробелы
+		void fill(char);						       // заполнить всё символом из аргумента
 	};
 }
