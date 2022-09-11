@@ -1,9 +1,14 @@
 #pragma once
 
 #include <cstddef>
+#include <functional>
+#include <iostream>
+#include <set>
 
 using std::ostream;
 using std::istream;
+using std::set;
+using std::function;
 
 namespace DataStructs
 {
@@ -14,7 +19,8 @@ namespace DataStructs
 		char* buff_; // указатель на буфер
 
 	private:
-		void initBuff(size_t = 0);
+		void reset();		// задать нулевые значения для len_ и buf_
+		void alloc(size_t); // выделить память и присвоить buff
 
 	public:
 		String();
@@ -35,25 +41,26 @@ namespace DataStructs
 
 		// тот же функционал но с проверкой выхода за границы
 		char& at(size_t);
-		char const& at (size_t) const;
+		char const& at(size_t) const;
 
 	public:
-		size_t len()   const noexcept;					// длина строки
-		bool   empty() const noexcept;					// пуста ли строка
-		char const* const getPtr() const noexcept;      // получиь указатель на буфер
+		size_t len()   const noexcept;			   // длина строки
+		bool   empty() const noexcept;			   // пуста ли строка
+		char const* const getPtr() const noexcept;         // получиь указатель на буфер
 
 	public:
-		void clear();		  // очистить буфер
+		void clear();	      // очистить буфер
 		void reserve(size_t); // выделить память под строку заранее (при этом строка должна быть пуста). задаваемый размер не должен быть равен 0
-		//void resize(size_t);  // переопределить размер буфера (старые данные сохраняются)
-
-		void pushBack(char);
 
 	public:
 		friend ostream& operator << (ostream&, String const&);
-	    friend istream& operator >> (istream&, String&);
+		friend istream& operator >> (istream&, String&);
 
 	public:
-		String trim(); // удалит все пробелы
+		size_t count(function<bool(char)> const&); // кол-во символов в строке, удов определённому условию
+		int pos(char);				   // позиция символа
+		String del(set<char> const&);		   // удалить все символы, указанные в аргументе
+
+		String trim();				   // удалить все пробелы
 	};
 }
