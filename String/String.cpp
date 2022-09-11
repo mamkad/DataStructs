@@ -4,7 +4,6 @@
 #include <iterator>
 #include <utility>
 #include <algorithm>
-#include <iostream>
 
 using std::move;
 using std::logic_error;
@@ -12,81 +11,112 @@ using std::invalid_argument;
 using std::ostream_iterator;
 using std::copy_n;
 using std::cout;
-using std::to_string;
-using std::for_each_n;
+using std::for_each;
 using std::swap;
+using std::find;
+using std::fill_n;
 
 namespace DataStructs
 {
-	void String::initBuff(size_t size)
+	// задать нулевые значения для len_ и buf_
+	void String::reset()
 	{
-		if(!size)
-		{
-			len_ = 0;
-			buff_ = nullptr;
-		}
-		else 
-		{
-			len_ = size;
-			buff_ = new char[len_];
-		}
+		len_ = 0;
+		buff_ = nullptr;
+	}
+
+	// выделить память и присвоить buff 
+	void String::alloc(size_t size)
+	{
+		len_ = size + 1;
+		buff_ = new char[len_];
+		buff_[len_ - 1] = '\0';
 	}
 
 	String::String()
 	{
 		cout << "String()\n";
-		initBuff();
+		reset();
 	}
 
 	String::String(char const* CstyleString)
-	try 
+	try
 	{
 		cout << "String(char const* CstyleString)\n";
 
-		initBuff(strlen(CstyleString) + 1);
-		copy_n (CstyleString, len_, buff_);
-		buff_[len_ - 1] = '\0';
+		size_t cStrLen = strlen(CstyleString);
+
+		if (cStrLen)
+		{
+			alloc(cStrLen);
+			copy_n(CstyleString, len(), buff_);
+		}
+		else
+		{
+			reset();
+		}
 	}
-	catch(...)
+	catch (...)
 	{
 		throw;
 	}
 
 	String::String(size_t count, char chr)
+	try
 	{
 		cout << "String(size_t count, char chr)\n";
 
-		initBuff(count + 1);
-		fill_n(buff_, len_, chr);
-		buff_[len_ - 1] = '\0';
+		if (count)
+		{
+			alloc(count);
+			fill_n(buff_, len(), chr);
+		}
+		else
+		{
+			reset();
+		}
 	}
-	catch(...)
+	catch (...)
 	{
 		throw;
 	}
 
 	String::String(size_t size)
+	try 
 	{
 		cout << "String(size_t size)\n";
 
-		initBuff(size + 1);
-		fill_n(buff_, len_, '\0');
+		if (size)
+		{
+			alloc(size);
+			fill_n(buff_, len(), '\0');
+		}
+		else
+		{
+			reset();
+		}
 	}
-	catch(...)
+	catch (...)
 	{
 		throw;
 	}
 
 	String::String(String const& otherString)
 	try
-	{	
+	{
 		cout << "String(String const& otherString)\n";
 
-		initBuff(otherString.len_);
-		copy_n (otherString.buff_, len_ - 1, buff_);
-		buff_[len_ - 1] = '\0';
+		if (!otherString.empty())
+		{
+			alloc(otherString.len_ - 1);
+			copy_n(otherString.buff_, len(), buff_);
+		}
+		else
+		{
+			reset();
+		}
 	}
-	catch(...)
+	catch (...)
 	{
 		throw;
 	}
@@ -95,13 +125,14 @@ namespace DataStructs
 	{
 		cout << "String(String&& otherString)\n";
 
-		initBuff();
+		reset();
 		*this = move(otherString);
 	}
 
 	String::~String()
 	{
 		cout << "~String()\n";
+
 		clear();
 	}
 	// --------------------------------------------------------------------------------------------------------------------------------
@@ -110,11 +141,15 @@ namespace DataStructs
 		if (this != &otherString)
 		{
 			cout << "operator= (String const& otherString)\n";
+
 			clear();
 
-			initBuff(otherString.len_);
-			copy_n (otherString.buff_, len_ - 1, buff_);
-			buff_[len_ - 1] = '\0';
+			if (!otherString.empty())
+			{
+				alloc(otherString.len_ - 1);
+
+				copy_n(otherString.buff_, len(), buff_);
+			}
 		}
 		return *this;
 	}
@@ -126,8 +161,6 @@ namespace DataStructs
 			cout << "operator= (String&& otherString)\n";
 
 			clear();
-
-			initBuff();
 			swap(len_, otherString.len_);
 			swap(buff_, otherString.buff_);
 		}
@@ -151,24 +184,24 @@ namespace DataStructs
 			throw logic_error("string is empty");
 		}
 
-		if (index > len_ - 1)
+		if (index > len())
 		{
-			throw invalid_argument("wrong index. len of string: " + to_string(len_ - 1));
+			throw invalid_argument("wrong index");
 		}
 
 		return buff_[index];
 	}
 
-	char const& String::at (size_t index) const
+	char const& String::at(size_t index) const
 	{
 		if (empty())
 		{
 			throw logic_error("string is empty");
 		}
 
-		if (index > len_ - 1)
+		if (index > len())
 		{
-			throw invalid_argument("wrong index. len of string: " + to_string(len_ - 1));
+			throw invalid_argument("wrong index");
 		}
 
 		return buff_[index];
@@ -180,7 +213,7 @@ namespace DataStructs
 		{
 			return len_;
 		}
-		
+
 		return len_ - 1;
 	}
 
@@ -208,8 +241,8 @@ namespace DataStructs
 
 		cout << "\tdeleting String\n";
 
-		delete[] buff_;	// удаляем буфер
-		initBuff();     // обнуляем указатель на буфер и длину
+		delete[] buff_; // удаляем буфер
+		reset();		// обнуляем указатель на буфер и длину
 	}
 
 	void String::reserve(size_t size)
@@ -224,54 +257,120 @@ namespace DataStructs
 			throw invalid_argument("size is zero");
 		}
 
-		initBuff(size + 1)
+		alloc(size);
 		fill_n(buff_, len_, '\0');
 	}
 	// --------------------------------------------------------------------------------------------------------------------------------
-	ostream& operator << (ostream & outStream, String const & stringClass)
+	ostream& operator << (ostream& outStream, String const& otherString)
 	{
-		if(!stringClass.empty())
+		if (!otherString.empty())
 		{
-			copy_n(stringClass.buff_, stringClass.len_, ostream_iterator<char> (outStream));
+			copy_n(otherString.getPtr(), otherString.len(), ostream_iterator<char>(outStream));
 		}
 
-	    return outStream;
+		return outStream;
 	}
 
-	istream& operator >> (istream & inStream, String & otherString)
+	istream& operator >> (istream& inStream, String& otherString)
 	{
-		if(otherString.empty())
+		if (otherString.empty())
 		{
 			throw invalid_argument("buffer of string is empty");
 		}
 
 		char ch = '\0';
 		size_t i = 0;
-		for(; (i < len_) && (inStream.get(ch)) && (ch != ' '); ++i)
+		for (; (i < otherString.len()) && (inStream.get(ch)) && (ch != ' '); ++i)
 		{
-			buff_[i] = ch;
+			otherString[i] = ch;
 		}
 
-		i = (i < len_) ? i : len_ - 1;
-		buff_[i] = '\0';
+		i = (i < otherString.len()) ? i : otherString.len();
+		otherString[i] = '\0';
 
-	    return inStream;
+		return inStream;
 	}
 	// --------------------------------------------------------------------------------------------------------------------------------
+	// кол-во символов, удов определённому условию в строке
+	size_t String::count(function<bool(char)> const& cond)
+	{
+		if (empty())
+		{
+			return 0;
+		}
+
+		size_t count = 0;
+		for_each( buff_, buff_ + len_, [&cond, &count](char c) { if (cond(c)) { ++count; } } );
+
+		return count;
+	}
+
+	int String::pos(char ch)
+	{
+		if (empty())
+		{
+			return -1;
+		}
+
+		for (int i = 0; i < len_; ++i)
+		{
+			if (buff_[i] == ch)
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	// удалить все символы, указанные в аргументе
+	String String::del(set<char> const& chars)		       
+	{
+		if (empty())
+		{
+			return "";
+		}
+
+		if (chars.empty())
+		{
+			return "";
+		}
+
+		auto cond = [&chars](char c){for(auto it = chars.begin(); it != chars.end(); ++it){if (*it == c){return true;}}return false;};
+		size_t newSize = count(cond);
+
+		if (!newSize)
+		{
+			return "";
+		}
+
+		String newString(newSize);
+
+		for (auto it = chars.begin(); it != chars.end(); ++it)
+		{
+			int i;
+			while ((i = pos(*it))&& i != -1)
+			{
+				
+			}
+		}
+	}
+
 	String String::trim()
 	{
-		String newString;
-		size_t newSize = 0;
+		auto cond = [](char c) {return (c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\a'); };
+		size_t newSize = count(cond);
 
-		auto cond = [](char ch) {return (ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r' && ch != '\a'); };
+		if (!newSize)
+		{
+			return "";
+		}
 
-		for_each_n(buff_, len_, [&newSize, &cond](char ch) { if(cond(ch)) { ++newSize; } } );
+		String newString(newSize);
 
-		newString.reserve(newSize);
-
-		size_t idx = 0;
-		for_each_n(buff_, len_, [&idx, &cond, &newString](char ch) { if(cond(ch)) { newString[idx++] = ch; } } );
-
+		size_t i = 0;
+		for_each(buff_, buff_ + len_, [&i, &cond, &newString](char ch) { if (cond(ch)) { newString[i++] = ch; } });
+		
 		return newString;
 	}
 }
