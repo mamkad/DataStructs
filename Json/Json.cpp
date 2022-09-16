@@ -1,17 +1,13 @@
-#include "Json.h"
+#include "Json.hpp"
 
-#include <stack>
 #include <algorithm>
-#include <functional>
 #include <iostream>
 
 using std::cout;
 using std::for_each;
-using std::function;
 using std::move;
 using std::exchange;
 using std::logic_error;
-using std::make_shared;
 
 namespace DataStructs
 {
@@ -80,12 +76,12 @@ namespace DataStructs
 			throw logic_error("To set a value for a node it must not contain child nodes");
 		}
 
-		value_ = value;
+		value_.push_back(value);
 	}
 
 	String& JsonNode::getValue()
 	{
-		return value_;
+		
 	}
 
 	void JsonNode::clear()
@@ -105,6 +101,10 @@ namespace DataStructs
 		return childNodes_.empty();
 	}
 	//================================================================================================================================================================
+	
+	function<bool(char)> Json::isNotDigAlph = [](char ch) { return !(isdigit(ch) || isalpha(ch)); };
+	function<bool(char)> Json::isNotDig = [](char ch) { return !(isdigit(ch)); };
+	
 	Json::Json()
 	{
 		cout << "Json()\n";
@@ -113,6 +113,7 @@ namespace DataStructs
 	Json::Json(String const& fileName)
 	{
 		cout << "Json(String const& fileName)\n";
+		parseFromFile(fileName);
 	}
 
 	Json::Json(Json const& otherJson)
@@ -133,17 +134,20 @@ namespace DataStructs
 	Json& Json::operator=(Json const& otherJson)
 	{
 		cout << "Json::operator=(Json const& otherJson)\n";
+		return *this;
 	}
 
 	Json& Json::operator=(Json&& otherJson)
 	{
 		cout << "Json::operator=(Json&& otherJson)\n";
+		return *this;
 	}
 	//------------------------------------------------------------------------------------------------------------------------------------
 	JsonNode& Json::getByKey(String const& key)
 	{
-
+		
 	}
+
 	JsonNode& Json::operator[](String const& key)
 	{
 		return getByKey(key);
@@ -151,14 +155,15 @@ namespace DataStructs
 	//------------------------------------------------------------------------------------------------------------------------------------
 	void Json::parseFromFile(String const& fileName)
 	{
-
+		//parseFromString("");
 	}
 
-	void Json::parseFromString(String const& jsonString)
+	void Json::parseFromString(String& jsonString)
 	{
 		try
 		{
-			parse(rootNode_, jsonString, 0);
+			String tmpJsonString = jsonString.trim();
+			parse(rootNode_, tmpJsonString, 0);
 		}
 		catch (...)
 		{
@@ -177,29 +182,32 @@ namespace DataStructs
 		return rootNode_->emptyChilds();
 	}
 	//------------------------------------------------------------------------------------------------------------------------------------
-	size_t Json::extractValue(String const& str, String& s, char delim, size_t pos, function<bool(char)> const& ifFunc, function<void()> const& elseAction)
+	size_t Json::extract(/*String const& jsonString, String& saveWord*/)
 	{
-		size_t j = pos;
+		/*
+		int start = i + 1;
+		int end = jsonString.pos(start, '"');
 
-		for (; j < str.len() && str[j] != delim; ++j)
+		if (end == -1)
 		{
-			if (ifFunc(str[j]))
-			{
-				//s.push_back(str[j]);
-			}
-			else
-			{
-				elseAction();
-			}
+			throw logic_error("Не найден символ \"");
 		}
-		return j;
-	}
 
-	size_t Json::parse(shared_ptr<DataStructs::JsonNode>& node, String const& jsonString, size_t pos)
+		key = jsonString.slice(start, end - start);
+
+		if (key.count(isNotDigAlph))
+		{
+			throw logic_error("Ключи должны содержать только символы латинского алфавита");
+		}*/
+		return 6;
+
+	}
+	
+	size_t Json::parse(shared_ptr<DataStructs::JsonNode>& node, String& jsonString, size_t pos)
 	{
 		bool inObj = false, isDef = false;
 		String key, value;
-
+		
 		for (size_t i = pos; i < jsonString.len(); ++i)
 		{
 			switch (jsonString[i])
@@ -217,7 +225,7 @@ namespace DataStructs
 					}
 					else
 					{
-						throw "ошибка1";
+						throw logic_error("Неправильно использован символ {");
 					}
 				}
 				else
@@ -232,7 +240,7 @@ namespace DataStructs
 					{
 						if (isDef)
 						{
-							throw "ошибка2";
+							throw logic_error("Неправильно использован символ }");
 						}
 						else
 						{
@@ -241,12 +249,12 @@ namespace DataStructs
 					}
 					else
 					{
-						throw "ошибка3";
+						throw logic_error("Неправильно использован символ }");
 					}
 				}
 				else
 				{
-					throw "ошибка4";
+					throw logic_error("Неправильно использован символ }");
 				}
 				break;
 			case '"':
@@ -256,29 +264,59 @@ namespace DataStructs
 					{
 						if (isDef)
 						{
-							throw "ошибка5";
+							throw logic_error("45Неправильно использован символ \"");
 						}
 						else
 						{
-							i = extractValue(jsonString, key, '"', i + 1, [](char ch) { return (isdigit(ch) || isalpha(ch)); }, []() { throw "ошибка"; });
+							int start = i + 1;
+							int end = jsonString.pos(start, '"');
+
+							if (end == -1)
+							{
+								throw logic_error("Не найден символ \"");
+							}
+
+							key = jsonString.slice(start, end - start);
+
+							if (key.count(isNotDigAlph))
+							{
+								throw logic_error("Ключи должны содержать только символы латинского алфавита");
+							}
+
+							i = end;
 						}
 					}
 					else
 					{
 						if (isDef)
 						{
-							i = extractValue(jsonString, value, '"', i + 1, [](char ch) { return (isdigit(ch) || isalpha(ch)); }, []() { throw "ошибка"; });
+							int start = i + 1;
+							int end = jsonString.pos(start, '"');
+
+							if (end == -1)
+							{
+								throw logic_error("Не найден символ \"");
+							}
+
+							value = jsonString.slice(start, end - start);
+
+							if (value.count(isNotDigAlph))
+							{
+								throw logic_error("Ключи должны содержать только символы латинского алфавита");
+							}
+
 							isDef = false;
+							i = end;
 						}
 						else
 						{
-							throw "ошибка7";
+							throw logic_error("3Неправильно использован символ \"");
 						}
 					}
 				}
 				else
 				{
-					throw "ошибка8";
+					throw logic_error("2Неправильно использован символ \"");
 				}
 				break;
 			case ':':
@@ -286,7 +324,7 @@ namespace DataStructs
 				{
 					if (key.empty())
 					{
-						throw "ошибка9";
+						throw logic_error("Не указан ключ");
 					}
 					else
 					{
@@ -295,7 +333,7 @@ namespace DataStructs
 				}
 				else
 				{
-					throw "ошибка10";
+					throw logic_error("Неправильно использован символ :");
 				}
 				break;
 			case ',':
@@ -311,12 +349,12 @@ namespace DataStructs
 					}
 					else
 					{
-						throw "ошибка11";
+						throw logic_error("Неправильно использован символ , ");
 					}
 				}
 				else
 				{
-					throw "ошибка12";
+					throw logic_error("Неправильно использован символ , ");
 				}
 				break;
 			case '[':
@@ -324,24 +362,35 @@ namespace DataStructs
 				{
 					if (key.empty())
 					{
-						throw "ошибка14";
+						throw logic_error("Не указан ключ");
 					}
 					else
 					{
 						if (isDef)
 						{
-							i = extractValue(jsonString, value, ']', i + 1, [](char ch) { return ch != ',' && ch != '"'; }, [&value]() {/*value.push_back(' ');*/ });
+							int start = i + 1;
+							int end = jsonString.pos(start, ']');
+
+							if (end == -1)
+							{
+								throw logic_error("Не найден символ ["); 
+							}
+
+							vector<String> args;
+							jsonString.slice(start, end - start).split(args, 0, ',');
+
 							isDef = false;
+							i = end;
 						}
 						else
 						{
-							throw "ошибка16";
+							throw logic_error("Неправильно использован символ [");
 						}
 					}
 				}
 				else
 				{
-					throw "ошибка13";
+					throw logic_error("Неправильно использован символ [");
 				}
 				break;
 			case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
@@ -349,32 +398,86 @@ namespace DataStructs
 				{
 					if (key.empty())
 					{
-						throw "ошибка14";
+						throw logic_error("Не указан ключ");
 					}
 					else
 					{
 						if (isDef)
 						{
-							i = extractValue(jsonString, value, ',', i, [](char ch) { return (isdigit(ch)); }, []() { throw "ошибка"; }) - 1;
+							int start = i;
+							int end = jsonString.pos(start, ',');
+
+							if (end == -1)
+							{
+								logic_error("Не найден символ ,"); 
+							}
+
+							value = jsonString.slice(start, end - start);
+
+							if (value.count(isNotDig))
+							{
+								logic_error("Неправильно задано значение");
+							}
+
 							isDef = false;
+							i = end - 1;
 						}
 						else
 						{
-							throw "ошибка16";
+							throw logic_error("Ошибка дока");
 						}
 					}
 				}
 				else
 				{
-					throw "ошибка17";
+					throw logic_error("Значение вне документа");
 				}
 				break;
 			default:
-				throw "ошибка18";
+				throw logic_error("Неизвестный символ");
 				break;
 			}
 		}
+		return 0;
 	}
+}
+
+int main()
+{
+	DataStructs::String h = "{\"name\":\"Anton\",\"lastname\":\"Rudenok\",\"age\":34,\"address\":{\"city\":\"SpB\",\"streets\":{\"lenin\":34,\"pushkin\":456,},\"area\":3423423,},\"postalCode\":101101,}";
+	/*
+	string h = "{\
+   					\"firstName\": \"Iavn\",\
+   					\"lastName\": \"Iavnov\",\
+   					\"address\": {\
+				       \"streetAddress\": \"Moscow\",\
+				       \"city\": \"Leningrad\",\
+				       \"postalCode\": 101101,\
+					   },\
+					   \"phoneNumbers\": [\
+					       \"812 123-1234\",\
+					       \"916 123-4567\"\
+					   ],\
+						}";*/
+	
+	
+	DataStructs::Json json;
+	try
+	{
+		try 
+		{
+			json.parseFromString(h);
+		}
+		catch(...)
+		{
+			throw;
+		}
+	}
+	catch(const std::exception& e)
+	{
+		std::cerr << '\n' << e.what() << '\n';
+	}
+	
 }
 
 

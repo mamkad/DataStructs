@@ -1,19 +1,28 @@
 #pragma once
 
-#include "String.hpp"
+#include "../String/String.hpp"
 //#include "../File/File.hpp"
 
 #include <map>
 #include <memory>
+#include <vector>
+#include <functional>
 
 using std::map;
 using std::shared_ptr;
+using std::make_shared;
+using std::function;
+using std::vector;
 
 namespace DataStructs
 {
     // класс json-узла (ключ и указатель на значения для данного ключа
     struct JsonNode final
     {
+    private:
+        vector<String> value_;                           // значения
+        map<String, shared_ptr<JsonNode>> childNodes_;   // дочерние узлы
+
     public:
         JsonNode();
         JsonNode(JsonNode const&);
@@ -33,14 +42,14 @@ namespace DataStructs
     public:
         bool emptyValue()  const noexcept;  // содежит ли узел значение
         bool emptyChilds() const noexcept;  // имеет ли узел дочерние узлы
-
-    private:
-        String value_;                                   // значение
-        map<String, shared_ptr<JsonNode>> childNodes_;   // дочерние узлы
     };
 
     class Json final
     {
+    public:
+        static function<bool(char)> isNotDigAlph;
+        static function<bool(char)> isNotDig;
+
     private:
         shared_ptr<JsonNode> rootNode_ = make_shared<JsonNode>(); // главнй корневой узел 
 
@@ -61,14 +70,14 @@ namespace DataStructs
 
     public:
         void parseFromFile(String const&);
-        void parseFromString(String const&);
+        void parseFromString(String&);
         void clear();
 
     public:
         bool empty() const noexcept;
 
     private:
-        static size_t extractValue(String const&, String&, char, size_t, function<bool(char)> const&, function<void()> const&);
-        static size_t parse(shared_ptr<JsonNode>&, String const&, size_t);
+        static size_t extract();
+        static size_t parse(shared_ptr<JsonNode>&, String&, size_t);
     };
 }
