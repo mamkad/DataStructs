@@ -4,11 +4,13 @@
 #include <functional>
 #include <iostream>
 #include <set>
+#include <vector>
 
 using std::ostream;
 using std::istream;
 using std::set;
 using std::function;
+using std::vector;
 
 namespace DataStructs
 {
@@ -46,7 +48,7 @@ namespace DataStructs
 	public:
 		size_t len()   const noexcept;			   // длина строки
 		bool   empty() const noexcept;			   // пуста ли строка
-		char const* const getPtr() const noexcept;         // получиь указатель на буфер
+		char const* const getPtr() const noexcept; // получиь указатель на буфер
 
 	public:
 		void clear();	      // очистить буфер
@@ -56,14 +58,21 @@ namespace DataStructs
 		friend ostream& operator << (ostream&, String const&);
 		friend istream& operator >> (istream&, String&);
 
+		friend bool operator < (String const&, String const&);
+		friend bool operator > (String const&, String const&);
+
+		friend bool operator == (String const&, String const&);
+
 	public:
 		size_t count(function<bool(char)> const&); // кол-во символов в строке, удов определённому условию
-		int pos(char);				   			   // позиция символа (поиск с начала)
-		int rpos(char);				   			   // позиция символа (поиск с конца)
+		int pos(size_t,  char);				   	   // позиция символа (поиск с начала от заданной позиции)
+		int rpos(size_t, char);				   	   // позиция символа (поиск с конца от заданной позиции)
 		
-		String del(set<char> const&);		   	   // удалить все символы, указанные в аргументе
+		String del(set<char> const&);		  	   // удалить все символы, указанные в аргументе
 		String trim();							   // удалить все пробелы
 
-		void fill(char);						       // заполнить всё символом из аргумента
+		void fill(char);						   // заполнить всё символом из аргумента
+		String slice(size_t, size_t);			   // взять подстроку
+		void split(vector<String>&, size_t, char);
 	};
 }

@@ -243,7 +243,7 @@ namespace DataStructs
 	{
 		if (!otherString.empty())
 		{
-			copy_n(otherString.getPtr(), otherString.len(), ostream_iterator<char>(outStream));
+			copy_n(otherString.buff_, otherString.len_, ostream_iterator<char>(outStream));
 		}
 
 		return outStream;
@@ -260,35 +260,41 @@ namespace DataStructs
 
 		char ch = '\0';
 		size_t i = 0;
-		for (; (i < otherString.len()) && (inStream.get(ch)) && (ch != '\n') && (ch != ' '); ++i)
+		for (; (i < otherString.len_) && (inStream.get(ch)) && (ch != '\n') && (ch != ' '); ++i)
 		{
-			otherString[i] = ch;
+			otherString.buff_[i] = ch;
 		}
 
 		return inStream;
 	}
+
+	bool operator < (String const& left, String const& right)
+	{
+		return (strncmp(left.buff_, right.buff_, (left.len_ < right.len_) ? left.len_ : right.len_) < 0);
+	}
+
+	bool operator > (String const& left, String const& right)
+	{
+		return !(left < right);
+	}
+
+	bool operator == (String const& left, String const& right)
+	{
+		return (strncmp(left.buff_, right.buff_, (left.len_ < right.len_) ? left.len_ : right.len_) == 0);
+	}
+
 	// --------------------------------------------------------------------------------------------------------------------------------
 	size_t String::count(function<bool(char)> const& cond)
 	{
-		if (empty())
-		{
-			return 0;
-		}
-
 		size_t count = 0;
-		for_each( buff_, buff_ + len_, [&cond, &count](char c) { if (cond(c)) { ++count; } } );
+		for_each( buff_, buff_ + len(), [&cond, &count](char c) { if (cond(c)) { ++count; } } );
 
 		return count;
 	}
 
-	int String::pos(char ch)
+	int String::pos(size_t pos, char ch)
 	{
-		if (empty())
-		{
-			return -1;
-		}
-
-		for (int i = 0; i < len(); ++i)
+		for (int i = pos; i < len(); ++i)
 		{
 			if (buff_[i] == ch)
 			{
@@ -299,14 +305,9 @@ namespace DataStructs
 		return -1;
 	}
 
-	int String::rpos(char ch)
+	int String::rpos(size_t pos, char ch)
 	{
-		if (empty())
-		{
-			return -1;
-		}
-
-		for (int i = len() - 1; i >= 0; --i)
+		for (int i = pos; i >= 0; --i)
 		{
 			if (buff_[i] == ch)
 			{
@@ -320,11 +321,6 @@ namespace DataStructs
 	// удалить все символы, указанные в аргументе
 	String String::del(set<char> const& chars)		       
 	{
-		if (empty())
-		{
-			return "";
-		}
-
 		if (chars.empty())
 		{
 			return "";
@@ -359,5 +355,31 @@ namespace DataStructs
 	void String::fill(char ch)
 	{
 		for_each( buff_, buff_ + len_, [ch](char& c) { c = ch; } );
-	}						   
+	}	
+
+	String String::slice(size_t pos, size_t count)
+	{
+		String newString(count);
+
+		for(size_t n = 0, i = pos; (i < len()) && (n < count); ++n, ++i)
+		{
+			newString[n] = buff_[i];
+		}
+
+		return newString;
+	}
+
+	void String::split(vector<String>& stringVector, size_t pos, char delim)
+	{
+		int endPos = this->pos(pos, delim);
+		int startPos = 0;
+
+		for( ; endPos != -1; startPos = endPos + 1, endPos = this->pos(startPos, delim))
+		{
+			if (endPos - startPos > 0)
+			{
+				stringVector.push_back(slice(startPos, endPos - startPos));
+			}
+		}
+	}				   
 }
