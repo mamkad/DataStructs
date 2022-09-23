@@ -5,7 +5,7 @@
 
 #include <iostream>
 using std::cout;
-
+using std::ostream;
 using std::copy_n;
 using std::swap;
 using std::for_each;
@@ -13,7 +13,6 @@ using std::move;
 using std::logic_error;
 using std::invalid_argument;
 using std::initializer_list;
-
 
 template<typename type_t>
 class Arr final
@@ -26,21 +25,21 @@ private:
     type_t* ptr_;
 
 private:
-    void alloc(size_t cap, size_t len = 0)
+    inline void alloc(size_t cap, size_t len = 0)
     {
         cap_ = cap;
         len_ = len;
         ptr_ = new type_t[cap_];
     }
 
-    void reset()
+    inline void reset()
     {
         cap_ = 0;
         len_ = 0;
         ptr_ = nullptr;
     }
 
-    void free()
+    inline void free()
     {
         if(!emptyCap())
         {
@@ -55,7 +54,7 @@ private:
         return (ptr_ == nullptr);
     }
 
-    void swp(Arr& otherArr)
+    inline void swp(Arr& otherArr)
     {
         swap(cap_, otherArr.cap_);
         swap(len_, otherArr.len_);
@@ -69,23 +68,23 @@ public:
         alloc(STDSIZE);
     }
   
-    explicit Arr(size_t size)
+    explicit Arr(size_t cap)
     {
-        cout << "Arr(size_t size)\n";
-        alloc(size);
+        cout << "Arr(size_t cap)\n";
+        alloc(cap);
     }
 
     Arr(type_t const* ptr, size_t cap)
     {
         cout << "Arr(type_t const* ptr, size_t cap)\n";
-        alloc(cap, cap);
+        alloc(KOEFF * cap, cap);
         copy_n(ptr, len(), ptr_);
     }
 
-    Arr(initializer_list<type_t> l)
+    Arr(initializer_list<type_t> const& l)
     {
         cout << "Arr(initializer_list<type_t> l)\n";
-        alloc(l.size(), l.size());
+        alloc(KOEFF * l.size(), l.size());
         copy_n(l.begin(), len(), ptr_);
     }
 
@@ -98,10 +97,9 @@ public:
   
     Arr(Arr&& otherArr) noexcept
     {
-       cout << "Arr(Arr&& otherArr)\n";
-       reset();
-      //*this = move(otherArr);
-      swp(otherArr);
+        cout << "Arr(Arr&& otherArr)\n";
+        reset();
+        swp(otherArr);
     }
 
     Arr& operator = (Arr const& otherArr)
@@ -156,39 +154,55 @@ public:
         --len_;
     }
 
-    void pushf()
+    void pushf(type_t const& value)
     {
+        if (len() >= cap())
+        {
+            resize(KOEFF * cap());
+        }
 
+        for(size_t i = len(); i >= 1; --i)
+        {
+            swap(ptr_[i], ptr_[i - 1]);
+        }
+
+        ptr_[0] = value;
+        ++len_;
     }
 
     void popf()
     {
+        if (empty())
+        {
+            throw logic_error("array is empty");
+        }
 
-    }
+        --len_;
 
-    void front()
-    {
-        
-    }
-
-    void last()
-    {
-
+        for(size_t i = 0; i < len(); ++i)
+        {
+            swap(ptr_[i], ptr_[i + 1]);
+        }
     }
 
     void clear()
     {
-        if (empty())
-        {
-            throw logic_error("array is already empty");
-        }
-
         len_ = 0;
     }
 
     void reverse()
     {
-        
+        if (empty())
+        {
+            return;
+        }
+
+        size_t halfLength = len() / 2;
+
+        for(size_t i = 0; i < halfLength; ++i)
+        {
+            swap(ptr_[i], ptr_[len() - i - 1]);
+        }
     }
 
     void resize(size_t newSize)
@@ -200,7 +214,12 @@ public:
 
     void reserve(size_t newSize)
     {
-        
+        if (newSize >= cap())
+        {
+            resize(KOEFF * newSize);
+        }
+
+        len_ = newSize;
     }
 
     void shrink()
